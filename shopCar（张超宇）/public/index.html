@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Title</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        .wrap{
+            width: 100%;
+        }
+        .header{
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #ffffe0;
+            text-align: center;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+        .header input{
+            width: 75%;
+            height: 30px;
+        }
+        .header button{
+            height: 30px;
+            width: 15%;
+            vertical-align: middle;
+        }
+        .sy{
+            padding-bottom: 45px;
+            padding-top: 51px;
+        }
+        .footer{
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #ffffe0;
+            text-align: center;
+            z-index: 1000;
+        }
+        .footer span{
+            display: inline-block;
+            width: 49%;
+            padding: 12px 0;
+        }
+        img{
+            width: 80%;
+            margin: 5px;
+        }
+        table {
+            text-align: center;
+            width: 100%;
+            font-size: 14px;
+            border-collapse: collapse;
+        }
+        table tbody td:first-child{
+            width: 50px;
+        }
+        .sy table button {
+            width: 18px;
+            margin:0 10px;
+        }
+        table tr {
+            line-height: 30px;
+            margin-bottom: 1px;
+            border-bottom:1px dashed black;
+        }
+        .shopCar input{
+            width: 20px;
+            height: 18px;
+            border: 1px solid;
+        }
+        .shopCar button:first-child{
+            width: 20px;
+            margin-right: -4px;
+        }
+        .shopCar button:last-child{
+            width: 20px;
+            margin-left: -4px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="sy">
+        <div class="header">
+            <input type="search" placeholder="冰箱/手机/电脑">
+            <button id="searchBtn">搜索</button>
+        </div>
+        <div class="content">
+            <table id="tb1">
+                <tbody></tbody>
+            </table>
+            <table id="tb2">
+                <tbody></tbody>
+            </table>
+            <table id="tb3">
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="shopCar" style="display: none">
+        <table>
+            <tbody></tbody>
+        </table>
+        <p>总价为 <b>0</b> 元</p>
+    </div>
+    <div class="footer">
+        <p>
+            <span>首页</span>
+            <span>购物车</span>
+        </p>
+    </div>
+</div>
+</body>
+<script src="js/jquery-3.3.1.js"></script>
+<script src="js/ajax(Promise).js"></script>
+<script>
+    // 渲染首页
+    function showPage(){
+        ajax.get("http://localhost:8081/showSy").then(res=>{
+            var data = JSON.parse(res);
+            // 划分种类
+            let data1 = data[0].list[0].products;
+            let data2 = data[0].list[1].products;
+            let data3 = data[0].list[2].products;
+            let str1 = "";
+            for (let i = 0; i < data1.length ; i++) {
+                str1 += `<tr>
+                            <td><img src="img/${data1[i].img_url}"></td>
+                            <td>${data1[i].name}</td>
+                            <td>&yen&nbsp${data1[i].price}</td>
+                            <td><button onclick="add(${data1[i].id})"> + </button></td>
+                        </tr>`
+            }
+            $("#tb1 tbody").html(str1)
+            let str2 = "";
+            for (let i = 0; i < data1.length ; i++) {
+                str2 += `<tr>
+                            <td><img src="img/${data2[i].img_url}"></td>
+                            <td>${data2[i].name}</td>
+                            <td>&yen&nbsp${data2[i].price}</td>
+                            <td><button onclick="add(${data2[i].id})"> + </button></td>
+                        </tr>`
+            }
+            $("#tb2 tbody").html(str2)
+            let str3 = "";
+            for (let i = 0; i < data1.length ; i++) {
+                str3 += `<tr>
+                            <td><img src="img/${data3[i].img_url}"></td>
+                            <td>${data3[i].name}</td>
+                            <td>&yen&nbsp${data3[i].price}</td>
+                            <td><button onclick="add(${data3[i].id})"> + </button></td>
+                        </tr>`
+            }
+            $("#tb3 tbody").html(str3)
+        })
+    }
+    showPage();
+    // 搜索功能
+    $("#searchBtn").click(function () {
+        if ($(this).prev().val() == "冰箱"){
+            $("#tb1").show().siblings().hide();
+            $(this).prev().val("")
+        }else if ($(this).prev().val() == "电脑"){
+            $("#tb2").show().siblings().hide();
+            $(this).prev().val("")
+        }else if ($(this).prev().val() == "手机"){
+            $("#tb3").show().siblings().hide();
+            $(this).prev().val("")
+        }else{
+            $(".content table").show()
+            $(this).prev().val("")
+            alert("搜索内容有误")
+        }
+    })
+    // 首页与购物车切换
+    // 首页
+    $(".footer span").eq(0).click(function () {
+        $(".sy").show();
+        $(this).css("background","red").next().css("background","")
+        $(".shopCar").hide();
+    })
+    // 购物车
+    $(".footer span").eq(1).click(function () {
+        $(".shopCar").show();
+        $(this).css("background","red").prev().css("background","")
+        $(".sy").hide();
+    })
+
+    //添加到购物车
+    function add(id) {
+        ajax.get("http://localhost:8081/add",{id}).then(res=>{
+            console.log(res);
+            showCar()
+        })
+    }
+    showCar()
+    // 渲染购物车
+    function showCar(){
+        ajax.get("http://localhost:8081/shopcar").then(res=>{
+            let data = JSON.parse(res);
+            let str = "";
+            let sum = 0;
+            for (let i = 0; i < data.length ; i++) {
+                sum+=data[i].total*1
+                str += `<tr>
+                            <td><img src="img/${data[i].img_url}"></td>
+                            <td>${data[i].name}</td>
+                            <td>&yen&nbsp${data[i].price}</td>
+                            <td><button onclick="down(${data[i].id})">-</button>
+                                <input type="text" style="text-align: center" value="${data[i].num}" readonly>
+                                <button onclick="up(${data[i].id})">+</button></td>
+                        </tr>`
+            }
+            $(".shopCar table tbody").html(str);
+            $("b").html(sum)
+        })
+    }
+    // 减按钮
+    function down(d){
+        ajax.get("http://localhost:8081/down",{id:d}).then(res=>{
+            console.log(res);
+            showCar()
+        })
+    }
+    // 加按钮
+    function up(u){
+        ajax.get("http://localhost:8081/up",{id:u}).then(res=>{
+            console.log(res)
+            showCar()
+        })
+    }
+</script>
+</html>
