@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Title</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .wrap{
+            width: 100%;
+        }
+        .footer{
+            display: flex;
+            justify-content: space-between;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: #808080;
+            color: white;
+        }
+        .footer button{
+            width: 35%;
+            color: white;
+            font-size: 16px;
+            background: #808080;
+            border: none;
+            border-left:white 1px solid ;
+        }
+        .footer p{
+            align-self: center;
+            line-height: 40px;
+            text-align: center;
+        }
+        .footer b{
+            width: 50%;
+        }
+        .footer p:first-child{
+            width: 20%;
+            border-right: white 1px solid;
+            background: red;
+        }
+        li{
+            display: flex;
+            justify-content: space-between;
+            background: #ffffe0;
+            border-bottom: 1px solid;
+        }
+        .left{
+            width: 49%;
+            padding: 8% 0;
+            text-align: center;
+        }
+        img{
+            width: 65%;
+            vertical-align: center;
+        }
+        .right{
+            padding: 5% 0;
+            width: 49%;
+            display: flex;
+            align-content:space-around ;
+            flex-flow: wrap;
+        }
+        .right>h2,
+        .right p,
+        .right .car{
+            text-align: center;
+            width: 100%;
+        }
+        .car{
+            height: 30px;
+            display: flex;
+            justify-content: center;
+        }
+        .car button{
+            margin: 0 10px;
+            width: 30px;
+            border: none;
+            border-radius: 50%;
+            background: yellow;
+            font-size: 25px;
+        }
+        .car h3,
+        .car input{
+            line-height: 30px;
+            width: 30px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <ul></ul>
+    <div class="footer">
+        <p>0</p>
+        <p>总价￥<b> 0 </b></p>
+        <button disabled="disabled">起送还差￥<strong> 50 </strong></button>
+    </div>
+</div>
+</body>
+<script src="js/jquery-3.3.1.js"></script>
+<script src="js/ajax(Promise).js"></script>
+<script>
+function showPage(){
+    ajax.get("http://localhost:8080/show").then(res=>{
+        let arr = JSON.parse(res);
+        let str = "";
+        for (let i = 0; i < arr.length ; i++) {
+            str += `<li>
+                        <div class="left"><img src="${arr[i].url}" alt=""></div>
+                        <div class="right">
+                            <h2>${arr[i].name}</h2>
+                            <p>￥${arr[i].price}</p>
+                            <div class="car">
+                                <button class="down" onclick="down($(this),'${arr[i]._id}')"> - </button>
+                                <h3 onclick="yc($(this))">${arr[i].num}</h3>
+                                <input type="text" style="display: none" onblur="changeIpt($(this),'${arr[i]._id}')">
+                                <button class="up" onclick="up($(this),'${arr[i]._id}')"> + </button>
+                            </div>
+                        </div>
+                    </li>`
+        }
+        $("ul").html(str)
+        total()
+    })
+}
+showPage()
+// 加
+function up(u,id) {
+   let q = u.prev().prev()[0].innerHTML++;
+   if (q>=0){
+       u.prev().prev().css("display","inline-block");
+       u.prev().prev().prev().css("display","inline-block");
+   }
+    ajax.get("http://localhost:8080/add",{id:id,num:q}).then(res=>{
+        u[0].removeAttribute("disabled")
+        total()
+    })
+    u.attr("disabled","disabled")
+}
+// 减
+function down(d,id) {
+    let q = d.next()[0].innerHTML--;
+    if (q <=1 ) {
+        d.css("display", "none");
+        d.next().css("display", "none");
+    }
+    ajax.get("http://localhost:8080/reduce",{id:id,num:q}).then(res=>{
+        total()
+        d[0].removeAttribute("disabled")
+    })
+    d.attr("disabled","disabled")
+}
+// 数量
+function yc(y) {
+    y.css("display","none").next().css("display","inline-block");
+}
+// 输入框
+function changeIpt(c,id){
+    c.css("display","none").prev().css("display","inline-block");
+    if (isNaN(c.val()) || c.val()<0) {
+        c[0].value = 0;
+    }else{
+        c[0].value = parseInt(c[0].value)
+    }
+    ajax.get("http://localhost:8080/ipt",{num:c.val(),id}).then(res=>{
+        c.prev().html(c.val())
+        total()
+    })
+}
+// 总价
+function total(){
+    ajax.get("http://localhost:8080/total").then(res=>{
+        res= JSON.parse(res);
+        $(".footer p").eq(0).html(res.sum);
+        $(".footer b").html(res.total);
+        if (res.total>50){
+            $(".footer button").css("background","orange")
+            $(".footer button")[0].removeAttribute("disabled");
+            $(".footer button").html("去 结 算")
+        }else{
+            $(".footer button").attr("disabled","disabled")
+            $(".footer button").css("background","")
+            $(".footer button").html("起送还差￥<strong>"+(50-res.total).toFixed(1)+"</strong>")
+        }
+    })
+}
+</script>
+</html>
